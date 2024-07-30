@@ -28,7 +28,7 @@ class Game:
             self.money.win(bet)  # Return bet
             return "Push: Both player and dealer have Blackjack.", 0
         elif player_hand.is_blackjack():
-            winnings = int(bet * 1.5) + bet  # 3:2 payout
+            winnings = int(bet * 2.5)  # 3:2 payout
             self.money.win(winnings)
             return f"Player wins with Blackjack! Payout: ${winnings}", winnings
         elif dealer_hand.is_blackjack():

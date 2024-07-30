@@ -11,68 +11,78 @@ class TestBlackJack(unittest.TestCase):
     def setUp(self):
         self.money = Money(5000)
         self.game = Game(self.money.balance)
+        self.suit = choice(SUITS)
+        self.player_hand = Hand()
+        self.dealer_hand = Hand()
+        self.hand = Hand()
 
     def test_player_wins(self):
-        player_hand = Hand()
-        player_hand.add_cards([Card("10", choice(SUITS)), Card("A", choice(SUITS))])
+        self.player_hand.add_cards([Card("10", self.suit), Card("A", self.suit)])
+        self.dealer_hand.add_cards([Card("9", self.suit), Card("8", self.suit)])
 
-        dealer_hand = Hand()
-        dealer_hand.add_cards([Card("9", choice(SUITS)), Card("8", choice(SUITS))])
-
-        result, winnings = self.game.determine_winner(player_hand, dealer_hand, 100)
+        result, winnings = self.game.determine_winner(
+            self.player_hand, self.dealer_hand, 100
+        )
         self.assertEqual(result, "Player wins!")
         self.assertEqual(winnings, 200)
 
     def test_player_is_blackjack(self):
-        hand = Hand()
-        hand.add_cards([Card("A", choice(SUITS)), Card("K", choice(SUITS))])
-        self.assertTrue(hand.is_blackjack(), True)
+        self.hand.add_cards([Card("A", self.suit), Card("K", self.suit)])
+        self.assertTrue(self.hand.is_blackjack(), True)
 
     def test_blackjack_tied(self):
-        player_hand = Hand()
-        dealer_hand = Hand()
-        player_hand.add_cards([Card("A", choice(SUITS)), Card("K", choice(SUITS))])
-        dealer_hand.add_cards([Card("A", choice(SUITS)), Card("J", choice(SUITS))])
-        _, winning = self.game.determine_winner(player_hand, dealer_hand, 100)
+        self.player_hand.add_cards([Card("A", self.suit), Card("K", self.suit)])
+        self.dealer_hand.add_cards([Card("A", self.suit), Card("J", self.suit)])
+        _, winning = self.game.determine_winner(self.player_hand, self.dealer_hand, 100)
         self.assertEqual(winning, 0)
 
     def test_hand_is_bust(self):
         hand = Hand()
         hand.add_cards(
             [
-                Card("10", choice(SUITS)),
-                Card("10", choice(SUITS)),
-                Card("2", choice(SUITS)),
+                Card("10", self.suit),
+                Card("10", self.suit),
+                Card("2", self.suit),
             ]
         )
         self.assertEqual(hand.is_bust(), True)
 
-    # def test_player_blackjack_win(self):
+    def test_tie_both_blackjack(self):
+        self.player_hand.add_cards([Card("A", self.suit), Card("K", self.suit)])
+        self.dealer_hand.add_cards([Card("A", self.suit), Card("J", self.suit)])
+
+        _, winning = self.game.determine_winner(self.player_hand, self.dealer_hand, 100)
+        self.assertEqual(winning, 0)
+
+    def test_player_wins_regular_hand(self):
+        self.player_hand.add_card(Card("5", self.suit))
+        self.player_hand.add_card(Card("10", self.suit))
+        self.dealer_hand.add_card(Card("6", self.suit))
+        self.dealer_hand.add_card(Card("7", self.suit))
+        self.player_hand.add_card(Card("5", self.suit))
+        self.dealer_hand.add_card(Card("6", self.suit))
+
+        _, winning = self.game.determine_winner(self.player_hand, self.dealer_hand, 100)
+        self.assertEqual(winning, 200)
+
+    def test_player_loses_regular_hand(self):
+        self.player_hand.add_cards(
+            [Card("10", self.suit), Card("5", self.suit), Card("4", self.suit)]
+        )
+        self.dealer_hand.add_cards([Card("10", self.suit), Card("10", self.suit)])
+        _, winning = self.game.determine_winner(self.player_hand, self.dealer_hand, 100)
+        self.assertEqual(winning, 0)
+
+    def test_win_double_down(self):
+        self.player_hand.add_cards(
+            [Card("10", self.suit), Card("5", self.suit), Card("4", self.suit)]
+        )
+        self.dealer_hand.add_cards([Card("10", self.suit), Card("8", self.suit)])
+        _, winning = self.game.determine_winner(
+            self.player_hand, self.dealer_hand, 100, doubled_down=True
+        )
+        self.assertEqual(winning, 400)
 
 
 #! Really gotta learn to use pytest library
 # * seems less verbose and the use of fixture and mark.parameterize sounds noice!
-# import pytest
-# from .blackjack import Hand
-
-# # @pytest.fixture
-# ...
-#
-# @pytest.mark.parametrize(
-#     "hand",
-#     "value()",
-#     [
-#         (Hand(["A", "8"]), 19),
-#         (Hand(["A", "J"]), "BLACKJACK"),
-#         (Hand(["A", "10"]), 21),
-#         (Hand(["2", "7"]), 9),
-#     ],
-# )
-# def test_dealt_hand_values(hand, value):
-#     assert hand.value() == value
-
-# @pytest.mark.parametrize(
-#     "num1, num2, expected", [(3, 2, 5), (4, 10, 14), (100, -1, 99)]
-# )
-# def test_add(num1, num2, expected):
-#     assert add(num1, num2) == expected
