@@ -83,6 +83,30 @@ class TestBlackJack(unittest.TestCase):
         )
         self.assertEqual(winning, 400)
 
+    def test_player_wins_insurance(self):
+        self.player_hand.add_cards([Card("10", self.suit), Card("A", self.suit)])
+        self.dealer_hand.add_cards([Card("A", self.suit), Card("J", self.suit)])
+
+        _, winning = self.game.determine_insurance_payout(self.dealer_hand, 100)
+
+        self.assertEqual(winning, 100)
+
+    def test_player_loses_insurance(self):
+        self.dealer_hand.add_cards([Card("A", self.suit), Card("8", self.suit)])
+        self.player_hand.add_cards([Card("A", self.suit), Card("10", self.suit)])
+
+        _, winning = self.game.determine_insurance_payout(self.player_hand, 100)
+
+        self.assertEqual(winning, 0)
+
+    def test_push_insurance(self):
+        self.dealer_hand.add_cards([Card("A", self.suit), Card("J", self.suit)])
+        self.player_hand.add_cards([Card("A", self.suit), Card("J", self.suit)])
+
+        _, winning = self.game.determine_insurance_payout(self.player_hand, 100)
+
+        self.assertEqual(winning, 100)
+
 
 #! Really gotta learn to use pytest library
 # * seems less verbose and the use of fixture and mark.parameterize sounds noice!
