@@ -23,6 +23,8 @@ Rules:
         print(f"Money: {game.money.balance}")
         try:
             bet = int(input("How much would you like to bet?: "))
+            if bet < 1:
+                raise ValueError("Bet must be more than $1")
             game.money.bet(bet)
             game.play(bet)
         except ValueError as e:

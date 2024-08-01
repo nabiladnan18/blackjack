@@ -1,3 +1,4 @@
+from multiprocessing.managers import ValueProxy
 import random
 from card import Card, CARDS, SUITS
 from hand import Hand
@@ -20,8 +21,33 @@ class Game:
     def deal_card(self):
         return self.deck.pop()
 
+    def insurance_bet_prompt(dealer_hand: Hand, bet: int):
+        if dealer_hand.cards[0] == "A":
+            try:
+                insurance_bet = int(
+                    input(
+                        "Dealer has a good chance of getting a Blackjack. You may choose to place an insurance bet. You will lose the insurance if the dealer does not have Blackjack. If the dealer has Blackjack, the insurance will be returned. How much insurance bet would you like to place:  "
+                    )
+                )
+            except ValueError:
+                return "You must enter an integer value to place your bet."
+            if insurance_bet > 0.5 * bet:
+                raise ValueError("Insurance bet must be below half of your bet.")
+            return insurance_bet
+        return 0
+
+    def determine_insurance_payout(self, dealer_hand: Hand, insurance_bet: int):
+        if dealer_hand.is_blackjack():
+            self.money.win(insurance_bet * 2)
+            return "Insurance bet returned.", insurance_bet
+        return "Dealer does not have Blackjack. Insurance is lost.", 0
+
     def determine_winner(
-        self, player_hand: Hand, dealer_hand: Hand, bet: int, doubled_down=False
+        self,
+        player_hand: Hand,
+        dealer_hand: Hand,
+        bet: int,
+        doubled_down=False,
     ):
         # Check for Blackjack
         if player_hand.is_blackjack() and dealer_hand.is_blackjack():
@@ -65,22 +91,13 @@ class Game:
             print(f"Player: {player_hand.value()}")
             print(f"Player: {player_hand}")
 
-            # Check for Blackjacks
-            if player_hand.is_blackjack() and dealer_hand.is_blackjack():
-                self.money.win(bet)
-                return "Push: Both player and dealer have Blackjack.", 0
-            elif player_hand.is_blackjack():
-                winnings = bet * 2.5  # 3:2 payout
-                self.money.win(winnings)
-                return f"Player wins with Blackjack! Payout: ${winnings}", winnings
-            elif dealer_hand.is_blackjack():
-                return "Dealer wins with Blackjack.", 0
-
-            if first_move and not player_hand.is_blackjack():
-                move = input("(H)it, (S)tand or (D)ouble Down?: ").lower()
+            if first_move:
+                if dealer_hand.cards[0] == "A":
+                    insurance_bet_placed = self.insurance_bet_prompt(dealer_hand, bet)
+                if not player_hand.is_blackjack():
+                    move = input("(H)it, (S)tand or (D)ouble Down?: ").lower()
             else:
                 move = input("(H)it or (S)tand?: ").lower()
-
             if move == "h":
                 player_hand.add_card(self.deal_card())
                 first_move = False
@@ -93,10 +110,18 @@ class Game:
                 player_hand.add_card(self.deal_card())
                 break
             else:
-                print("Invalid move; please choose again.")
+                print("\nInvalid move; please choose again.")
 
         while dealer_hand.value() <= 17:
             dealer_hand.add_card(self.deal_card())
+
+        if insurance_bet_placed:
+            message, insurance_won = self.determine_insurance_payout(
+                dealer_hand, insurance_bet_placed
+            )
+        print(message)
+        if insurance_won:
+            self.money.win(insurance_bet_placed)
 
         result, winnings = self.determine_winner(
             player_hand, dealer_hand, bet, doubled_down
