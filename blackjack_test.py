@@ -1,5 +1,6 @@
 import unittest
 from random import choice
+from unittest.mock import patch
 
 from game import Game
 from money import Money
@@ -103,10 +104,62 @@ class TestBlackJack(unittest.TestCase):
         self.dealer_hand.add_cards([Card("A", self.suit), Card("J", self.suit)])
         self.player_hand.add_cards([Card("A", self.suit), Card("J", self.suit)])
 
-        _, winning = self.game.determine_insurance_payout(self.player_hand, 100)
+        message, winning = self.game.determine_insurance_payout(
+            self.dealer_hand, self.bet
+        )
 
-        self.assertEqual(winning, 100)
+        self.assertEqual(winning, self.bet)
+        self.assertEqual(message, "Dealer has Blackjack. Insurance won!")
 
+    def test_double_down_player_bust_loss(self):
+        self.dealer_hand.add_cards([Card("A", self.suit), Card("6", self.suit)])
+        self.player_hand.add_cards(
+            [Card("10", self.suit), Card("5", self.suit), Card("7", self.suit)]
+        )
+
+        message, winning = self.game.determine_winner(
+            self.player_hand, self.dealer_hand, self.bet, doubled_down=True
+        )
+
+        self.assertEqual(winning, 0)
+        self.assertEqual(message, "Dealer wins!")
+
+    def test_double_down_dealer_blackjack(self):
+        self.dealer_hand.add_cards([Card("A", self.suit), Card("J", self.suit)])
+        self.player_hand.add_cards(
+            [Card("10", self.suit), Card("5", self.suit), Card("6", self.suit)]
+        )
+
+        message, winning = self.game.determine_winner(
+            self.player_hand, self.dealer_hand, self.bet, doubled_down=True
+        )
+
+        self.assertEqual(winning, 0)
+        self.assertEqual(message, "Dealer wins with Blackjack.")
+
+    def test_player_wins_blackjack(self):
+        self.dealer_hand.add_cards([Card("A", self.suit), Card("10", self.suit)])
+        self.player_hand.add_cards([Card("A", self.suit), Card("J", self.suit)])
+
+        message, winnings = self.game.determine_winner(
+            self.player_hand, self.dealer_hand, self.bet
+        )
+
+        self.assertEqual(message, f"Player wins with Blackjack! Payout: ${winnings}")
+        self.assertEqual(winnings, int(self.bet * 2.5))
+
+    # @patch("builtins.input", return_values=50)
+    def test_prompt_insurance_bet(self):
+        self.dealer_hand.add_cards([Card("A", self.suit), Card("10", self.suit)])
+        self.player_hand.add_cards([Card("10", self.suit), Card("7", self.suit)])
+
+        with patch("builtins.input", return_value=int(self.bet / 4)):
+            insurance_bet = self.game.insurance_bet_prompt(self.bet)
+
+        self.assertEqual(insurance_bet, int(self.bet / 4))
+
+
+# TODO: Test if the prompt is working
 
 #! Really gotta learn to use pytest library
 # * seems less verbose and the use of fixture and mark.parameterize sounds noice!
