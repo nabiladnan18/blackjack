@@ -16,13 +16,14 @@ class TestBlackJack(unittest.TestCase):
         self.player_hand = Hand()
         self.dealer_hand = Hand()
         self.hand = Hand()
+        self.bet = 100
 
     def test_player_wins(self):
         self.player_hand.add_cards([Card("10", self.suit), Card("A", self.suit)])
         self.dealer_hand.add_cards([Card("9", self.suit), Card("8", self.suit)])
 
         result, winnings = self.game.determine_winner(
-            self.player_hand, self.dealer_hand, 100
+            self.player_hand, self.dealer_hand, self.bet
         )
         self.assertEqual(result, "Player wins!")
         self.assertEqual(winnings, 200)
@@ -34,7 +35,11 @@ class TestBlackJack(unittest.TestCase):
     def test_blackjack_tied(self):
         self.player_hand.add_cards([Card("A", self.suit), Card("K", self.suit)])
         self.dealer_hand.add_cards([Card("A", self.suit), Card("J", self.suit)])
-        _, winning = self.game.determine_winner(self.player_hand, self.dealer_hand, 100)
+        message, winning = self.game.determine_winner(
+            self.player_hand, self.dealer_hand, 100
+        )
+
+        self.assertEqual(message, "Push: Both player and dealer have Blackjack.")
         self.assertEqual(winning, 0)
 
     def test_hand_is_bust(self):
@@ -52,7 +57,9 @@ class TestBlackJack(unittest.TestCase):
         self.player_hand.add_cards([Card("A", self.suit), Card("K", self.suit)])
         self.dealer_hand.add_cards([Card("A", self.suit), Card("J", self.suit)])
 
-        _, winning = self.game.determine_winner(self.player_hand, self.dealer_hand, 100)
+        _, winning = self.game.determine_winner(
+            self.player_hand, self.dealer_hand, self.bet
+        )
         self.assertEqual(winning, 0)
 
     def test_player_wins_regular_hand(self):
@@ -71,7 +78,9 @@ class TestBlackJack(unittest.TestCase):
             [Card("10", self.suit), Card("5", self.suit), Card("4", self.suit)]
         )
         self.dealer_hand.add_cards([Card("10", self.suit), Card("10", self.suit)])
-        _, winning = self.game.determine_winner(self.player_hand, self.dealer_hand, 100)
+        _, winning = self.game.determine_winner(
+            self.player_hand, self.dealer_hand, self.bet
+        )
         self.assertEqual(winning, 0)
 
     def test_win_double_down(self):
@@ -80,25 +89,29 @@ class TestBlackJack(unittest.TestCase):
         )
         self.dealer_hand.add_cards([Card("10", self.suit), Card("8", self.suit)])
         _, winning = self.game.determine_winner(
-            self.player_hand, self.dealer_hand, 100, doubled_down=True
+            self.player_hand, self.dealer_hand, self.bet, doubled_down=True
         )
-        self.assertEqual(winning, 400)
+        self.assertEqual(winning, self.bet * 2 * 2)
 
     def test_player_wins_insurance(self):
         self.player_hand.add_cards([Card("10", self.suit), Card("A", self.suit)])
         self.dealer_hand.add_cards([Card("A", self.suit), Card("J", self.suit)])
 
-        _, winning = self.game.determine_insurance_payout(self.dealer_hand, 100)
+        message, winning = self.game.determine_insurance_payout(self.dealer_hand, 100)
 
-        self.assertEqual(winning, 100)
+        self.assertEqual(winning, self.bet)
+        self.assertEqual(message, "Dealer has Blackjack. Insurance won!")
 
     def test_player_loses_insurance(self):
         self.dealer_hand.add_cards([Card("A", self.suit), Card("8", self.suit)])
         self.player_hand.add_cards([Card("A", self.suit), Card("10", self.suit)])
 
-        _, winning = self.game.determine_insurance_payout(self.player_hand, 100)
+        message, winning = self.game.determine_insurance_payout(
+            self.dealer_hand, self.bet
+        )
 
         self.assertEqual(winning, 0)
+        self.assertEqual(message, "Dealer does not have Blackjack. Insurance is lost.")
 
     def test_push_insurance(self):
         self.dealer_hand.add_cards([Card("A", self.suit), Card("J", self.suit)])
