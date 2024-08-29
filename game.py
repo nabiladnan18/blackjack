@@ -32,7 +32,7 @@ class Game:
 
     def determine_insurance_payout(self, dealer_hand: Hand, insurance_bet: int):
         if dealer_hand.is_blackjack():
-            self.money.win(insurance_bet)
+            self.money.win(insurance_bet * 2)
             return "Dealer has Blackjack. Insurance won!", insurance_bet
         return "Dealer does not have Blackjack. Insurance is lost.", 0
 
