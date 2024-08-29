@@ -20,25 +20,20 @@ class Game:
     def deal_card(self):
         return self.deck.pop()
 
-    def insurance_bet_prompt(dealer_hand: Hand, bet: int):
-        if dealer_hand.cards[0] == "A":
-            try:
-                insurance_bet = int(
-                    input(
-                        "Dealer has a good chance of getting a Blackjack. You may choose to place an insurance bet. You will lose the insurance if the dealer does not have Blackjack. If the dealer has Blackjack, the insurance will be returned. How much insurance bet would you like to place:  "
-                    )
-                )
-            except ValueError:
-                return "You must enter an integer value to place your bet."
-            if insurance_bet > 0.5 * bet:
-                raise ValueError("Insurance bet must be below half of your bet.")
-            return insurance_bet
-        return 0
+    def insurance_bet_prompt(self, bet: int):
+        insurance_bet = int(
+            input(
+                "Dealer has a good chance of getting a Blackjack. You may choose to place an insurance bet. You will lose the insurance if the dealer does not have Blackjack. If the dealer has Blackjack, the insurance will be returned. You may also choose not to place an insurance bet. In that case, enter 0. How much insurance bet would you like to place?: "
+            )
+        )
+        if insurance_bet > 0.5 * bet:
+            return "Insurance bet must be below half of your bet."
+        return insurance_bet
 
     def determine_insurance_payout(self, dealer_hand: Hand, insurance_bet: int):
         if dealer_hand.is_blackjack():
             self.money.win(insurance_bet * 2)
-            return "Insurance bet returned.", insurance_bet
+            return "Dealer has Blackjack. Insurance won!", insurance_bet
         return "Dealer does not have Blackjack. Insurance is lost.", 0
 
     def determine_winner(
@@ -78,6 +73,8 @@ class Game:
         dealer_hand = Hand()
         doubled_down = False
         first_move = True
+        move = None
+        insurance_bet_placed = False
 
         for _ in range(0, 2):
             player_hand.add_card(self.deal_card())
@@ -91,18 +88,29 @@ class Game:
             print(f"Player: {player_hand}")
 
             if first_move:
-                if dealer_hand.cards[0] == "A":
-                    insurance_bet_placed = self.insurance_bet_prompt(dealer_hand, bet)
-                if not player_hand.is_blackjack():
+                if player_hand.is_blackjack():
+                    break
+                if dealer_hand.cards[0].card == "A":
+                    while True:
+                        insurance_bet_placed = self.insurance_bet_prompt(bet)
+                        try:
+                            int(insurance_bet_placed)
+                        except ValueError:
+                            print(
+                                "You must enter an integer value to place your bet. Enter 0 if you do not wish to place an insurance bet."
+                            )
+                        break
+                if self.money.balance > bet * 2:
                     move = input("(H)it, (S)tand or (D)ouble Down?: ").lower()
             else:
                 move = input("(H)it or (S)tand?: ").lower()
+
             if move == "h":
                 player_hand.add_card(self.deal_card())
                 first_move = False
             elif move == "s":
                 break
-            elif move == "d" and first_move and len(player_hand.cards) == 2:
+            elif move == "d" and first_move:
                 doubled_down = True
                 self.money.bet(bet)
                 bet *= 2
@@ -115,12 +123,12 @@ class Game:
             dealer_hand.add_card(self.deal_card())
 
         if insurance_bet_placed:
-            message, insurance_won = self.determine_insurance_payout(
+            message, winning = self.determine_insurance_payout(
                 dealer_hand, insurance_bet_placed
             )
-        print(message)
-        if insurance_won:
-            self.money.win(insurance_bet_placed)
+            print(message)
+
+            self.money.win(winning)
 
         result, winnings = self.determine_winner(
             player_hand, dealer_hand, bet, doubled_down
