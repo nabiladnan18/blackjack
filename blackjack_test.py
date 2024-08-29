@@ -8,7 +8,7 @@ from hand import Hand
 from card import Card, SUITS
 
 
-class TestBlackJack(unittest.TestCase):
+class TestFunctions(unittest.TestCase):
     def setUp(self):
         self.money = Money(5000)
         self.game = Game(self.money.balance)
@@ -172,7 +172,107 @@ class TestBlackJack(unittest.TestCase):
         self.assertEqual(insurance_bet, int(self.bet / 4))
 
 
-# TODO: Test if the prompt is working
+class TestMockUserInput(unittest.TestCase):
+    def setUp(self):
+        # Initializing the game with a starting balance of 5000
+        self.money = Money(5000)
+        self.game = Game(self.money.balance)
+        self.suit = choice(SUITS)
+        self.player_hand = Hand()
+        self.dealer_hand = Hand()
+        self.bet = 100
+
+    @patch("builtins.input", side_effect=["0", "h", "s"])
+    # side_effect --> mocking user's input
+    def test_no_insurance_player_wins(self, mock_input):
+        # Set up the controlled deck
+        self.game.deck = [
+            Card("8", self.suit),  # Dealer
+            Card("10", self.suit),  # Player
+            Card("8", self.suit),  # Dealer
+            Card("3", self.suit),  # Player
+            Card("A", self.suit),  # Dealer
+            Card("8", self.suit),  # Player
+        ]
+
+        winnings = self.game.play(100)
+
+        # Expected state:
+        # Player: 8, 3, 10 (21)
+        # Dealer: A, 8, 8 (17)
+        # Player loses insurance
+
+        self.assertEqual((self.money.balance + self.bet * 2 - 50), 5150)
+        # Initial money + bet + bet - insurance
+
+        self.assertEqual(winnings, 200)  # Player --> 21
+
+    @patch(
+        "builtins.input", side_effect=["50", "h", "s"]
+    )  # insurance bet 50, hit, then stand
+    def test_player_decision_flow(self, mock_input):
+        # Mock the deck to control the card draws
+        self.game.deck = [
+            Card("10", self.suit),  # player
+            Card("J", self.suit),  # dealer
+            Card("8", self.suit),  # player
+            Card("A", self.suit),  # dealer
+            Card("3", self.suit),  # player
+        ]
+
+        winnings = self.game.play(100)
+
+        # Expected state:
+        # Player: 3, 8, 10 (21)
+        # Dealer: A, J (21)
+        # Dealer wins with BlackJack
+        # Player wins insurance 2:1
+
+        self.assertEqual((self.money.balance - self.bet + 50 * 2), self.money.balance)
+        # * Initial money - lost bet of 100 + (insurance bet 50 + dealer matches 50)
+
+        self.assertEqual(winnings, 0)  # Dealer --> BlackJack
+
+    @patch("builtins.input", side_effect=["d"])
+    def test_double_down(self, mock_input):
+        self.game.deck = [
+            Card("10", self.suit),
+            Card("5", self.suit),
+            Card("7", self.suit),  # dealer
+            Card("10", self.suit),  # player
+            Card("5", self.suit),  # dealer
+            Card("8", self.suit),  # player
+        ]
+
+        # Expected state:
+        # Player: 8, 10, 5
+        # Dealer: 5, doesn't really matter
+        # Player bust --> dealer wins
+
+        winnings = self.game.play(100)
+
+        self.assertEqual(winnings, 0)
+
+    @patch("builtins.input", side_effect=["s"])
+    def test_player_wins_with_blackjack(self, mock_input):
+        self.game.deck = [
+            Card("10", self.suit),
+            Card("A", self.suit),
+            Card("10", self.suit),  # dealer
+            Card("J", self.suit),  # player
+            Card("10", self.suit),  # dealer
+            Card("A", self.suit),  # player
+        ]
+
+        # Expected state:
+        # Player: 8, 10, 5
+        # Dealer: A, 10, A
+        # Player wins with Blackjack
+
+        winnings = self.game.play(100)
+
+        self.assertEqual(winnings, 250)
+
 
 #! Really gotta learn to use pytest library
 # * seems less verbose and the use of fixture and mark.parameterize sounds noice!
