@@ -50,7 +50,7 @@ class Game:
         elif player_hand.is_blackjack():
             winnings = int(bet * 2.5)  # 3:2 payout
             self.money.win(winnings)
-            return f"Player wins with Blackjack! Payout: ${winnings}", winnings
+            return "Player wins with Blackjack!", winnings
         elif dealer_hand.is_blackjack():
             return "Dealer wins with Blackjack.", 0
 
@@ -68,7 +68,7 @@ class Game:
 
         return "Dealer wins!", 0
 
-    def play(self, bet):
+    def play(self, current_balance, bet):
         player_hand = Hand()
         dealer_hand = Hand()
         doubled_down = False
@@ -100,7 +100,7 @@ class Game:
                                 "You must enter an integer value to place your bet. Enter 0 if you do not wish to place an insurance bet."
                             )
                         break
-                if self.money.balance > bet * 2:
+                if current_balance <= bet * 2:
                     move = input("(H)it, (S)tand or (D)ouble Down?: ").lower()
             else:
                 move = input("(H)it or (S)tand?: ").lower()

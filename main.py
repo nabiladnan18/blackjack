@@ -20,13 +20,14 @@ Rules:
 
     game = Game(5000)
     while game.money.balance > 0:
-        print(f"Money: {game.money.balance}")
+        current_balance = game.money.balance
+        print(f"Money: {current_balance}")
         try:
             bet = int(input("How much would you like to bet?: "))
             if bet < 1:
                 raise ValueError("Bet must be at least $1")
             game.money.bet(bet)
-            game.play(bet)
+            game.play(current_balance, bet)
         except ValueError as e:
             print(e)
             continue
