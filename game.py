@@ -50,7 +50,7 @@ class Game:
         elif player_hand.is_blackjack():
             winnings = int(bet * 2.5)  # 3:2 payout
             self.money.win(winnings)
-            return f"Player wins with Blackjack! Payout: ${winnings}", winnings
+            return "Player wins with Blackjack!", winnings
         elif dealer_hand.is_blackjack():
             return "Dealer wins with Blackjack.", 0
 
