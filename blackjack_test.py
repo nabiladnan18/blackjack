@@ -158,7 +158,7 @@ class TestFunctions(unittest.TestCase):
             self.player_hand, self.dealer_hand, self.bet
         )
 
-        self.assertEqual(message, f"Player wins with Blackjack! Payout: ${winnings}")
+        self.assertEqual(message, "Player wins with Blackjack!")
         self.assertEqual(winnings, int(self.bet * 2.5))
 
     # @patch("builtins.input", return_values=50)
@@ -195,7 +195,7 @@ class TestMockUserInput(unittest.TestCase):
             Card("8", self.suit),  # Player
         ]
 
-        winnings = self.game.play(100)
+        winnings = self.game.play(self.money.balance, 100)
 
         # Expected state:
         # Player: 8, 3, 10 (21)
@@ -220,7 +220,7 @@ class TestMockUserInput(unittest.TestCase):
             Card("3", self.suit),  # player
         ]
 
-        winnings = self.game.play(100)
+        winnings = self.game.play(self.money.balance, 100)
 
         # Expected state:
         # Player: 3, 8, 10 (21)
@@ -249,7 +249,7 @@ class TestMockUserInput(unittest.TestCase):
         # Dealer: 5, doesn't really matter
         # Player bust --> dealer wins
 
-        winnings = self.game.play(100)
+        winnings = self.game.play(self.money.balance, 100)
 
         self.assertEqual(winnings, 0)
 
@@ -269,7 +269,7 @@ class TestMockUserInput(unittest.TestCase):
         # Dealer: A, 10, A
         # Player wins with Blackjack
 
-        winnings = self.game.play(100)
+        winnings = self.game.play(self.money.balance, 100)
 
         self.assertEqual(winnings, 250)
 
